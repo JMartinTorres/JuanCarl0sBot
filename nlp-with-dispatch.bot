@@ -1,0 +1,104 @@
+{
+  "name": "nlp-with-dispatch",
+  "description": "",
+  "services": [
+    {
+      "type": "endpoint",
+      "id": "1",
+      "name": "development",
+      "appId": "",
+      "appPassword": "",
+      "endpoint": "http://localhost:3978/api/messages"
+    },
+    {
+      "type": "luis",
+      "name": "I_Campus",
+      "appId": "3b5e3725-cd7f-4a27-b7ba-b9068eaaa675",
+      "authoringKey": "939c8ed64e1d4736b2183c466523dac1",
+      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "version": "0.1",
+      "region": "westus",
+      "id": "7"
+    },
+    {
+      "type": "luis",
+      "name": "MyApps",
+      "appId": "8787718f-ac17-4dfe-95f6-4091e263b8c6",
+      "authoringKey": "939c8ed64e1d4736b2183c466523dac1",
+      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "version": "0.1",
+      "region": "westus",
+      "id": "8"
+    },
+    {
+      "type": "qna",
+      "name": "urjcbot-qna",
+      "id": "201",
+      "kbId": "ffcbf8e5-2f7b-4262-b30b-762149026328",
+      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "endpointKey": "05e209fa-b394-4e70-b0e3-11df3ac8596c",
+      "hostname": "https://urjcbotqnaservice.azurewebsites.net/qnamaker"
+    },
+    {
+      "type": "dispatch",
+      "serviceIds": [
+        "201",
+        "7"
+      ],
+      "name": "Dispatch",
+      "appId": "8d75fe24-cf91-4c88-b4b1-45f02d6e38c8",
+      "authoringKey": "939c8ed64e1d4736b2183c466523dac1",
+      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "version": "Dispatch",
+      "region": "westus",
+      "id": "161"
+    },
+    {
+      "type": "abs",
+      "tenantId": "5cc4e629-69c2-4a00-a494-6ec8a7200dae",
+      "subscriptionId": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "resourceGroup": "URJCBot_RG",
+      "serviceName": "JuanCarl0sBot",
+      "name": "JuanCarl0sBot",
+      "id": "1",
+      "appId": "36268e00-4b55-4f95-a8ad-ef546af2cf5f"
+    },
+    {
+      "type": "blob",
+      "tenantId": "5cc4e629-69c2-4a00-a494-6ec8a7200dae",
+      "subscriptionId": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "resourceGroup": "URJCBot_RG",
+      "serviceName": "juancarl0sbot97ab",
+      "id": "2"
+    },
+    {
+      "type": "endpoint",
+      "appId": "",
+      "appPassword": "",
+      "endpoint": "http://localhost:3978/api/messages",
+      "name": "development",
+      "id": "3"
+    },
+    {
+      "type": "endpoint",
+      "appId": "36268e00-4b55-4f95-a8ad-ef546af2cf5f",
+      "appPassword": "l[oqiK+q0R:NvE;_n]m/r30}-Zc_3",
+      "endpoint": "https://juancarl0sbot.azurewebsites.net/api/messages",
+      "name": "production",
+      "id": "4"
+    },
+    {
+      "type": "appInsights",
+      "instrumentationKey": "07935bbf-62e3-4420-ab43-f9b1a6432e6d",
+      "applicationId": "a4118fa3-8581-41d9-82f8-4c9a421570cf",
+      "apiKeys": {},
+      "tenantId": "5cc4e629-69c2-4a00-a494-6ec8a7200dae",
+      "subscriptionId": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "resourceGroup": "URJCBot_RG",
+      "serviceName": "JuanCarl0sBot3olhpd",
+      "id": "5"
+    }
+  ],
+  "padlock": "",
+  "version": "2.0"
+}
