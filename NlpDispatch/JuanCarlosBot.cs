@@ -23,7 +23,7 @@ namespace NLP_With_Dispatch_Bot
     /// </summary>
     public class JuanCarlosBot : IBot
     {
-        private const string WelcomeText = "Soy JuanCarl0sBot, ¿en qué puedo ayudarte?";
+        private const string WelcomeText = "Soy JuanCarl0sBot, ¿en qué puedo ayudarte? TIC";
 
         /// <summary>
         /// Key in the Bot config (.bot file) for the Home Automation Luis instance.
