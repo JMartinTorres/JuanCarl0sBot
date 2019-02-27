@@ -23,7 +23,7 @@ namespace NLP_With_Dispatch_Bot
     /// </summary>
     public class JuanCarlosBot : IBot
     {
-        private const string WelcomeText = "Soy JuanCarl0sBot, ¿en qué puedo ayudarte? TIC";
+        private const string WelcomeText = "Soy JuanCarl0sBot, ¿en qué puedo ayudarte?";
 
         /// <summary>
         /// Key in the Bot config (.bot file) for the Home Automation Luis instance.
@@ -167,30 +167,24 @@ namespace NLP_With_Dispatch_Bot
         /// </summary>
         private async Task DispatchToTopIntentAsync(ITurnContext context, (string intent, double score)? topIntent, CancellationToken cancellationToken = default(CancellationToken))
         {
-            switch (topIntent.Value.intent)
+            // No se reconoce ningún intent.
+            if (topIntent.Value.intent == noneDispatchKey)
             {
-                case CampusDispatchKey:
-                    await DispatchToLuisModelAsync(context, CampusDispatchKey);
+                await context.SendActivityAsync($"Dispatch intent: {topIntent.Value.intent} ({topIntent.Value.score}).");
+            }
 
-                    // Here, you can add code for calling the hypothetical home automation service, passing in any entity information that you need
-                    break;
-                case myAppsDispatchKey:
-                    await DispatchToLuisModelAsync(context, myAppsDispatchKey);
-
-                    // Here, you can add code for calling the hypothetical home automation service, passing in any entity information that you need
-                    break;
-                case qnaDispatchKey:
-                    await DispatchToQnAMakerAsync(context, QnAMakerKey);
-                    break;
-                case noneDispatchKey:
-                // You can provide logic here to handle the known None intent (none of the above).
-                // In this example we fall through to the QnA intent.
-
-
-                default:
-                    // The intent didn't match any case, so just display the recognition results.
-                    await context.SendActivityAsync($"Dispatch intent: {topIntent.Value.intent} ({topIntent.Value.score}).");
-                    break;
+            // Intent reconocido se envía a función de procesado de apps LUIS.
+            else
+            {
+                var intent = topIntent.Value.intent;
+                if (intent.Contains(":"))
+                {
+                    await DispatchToLuisModelAsync(context, intent.Substring(0, intent.IndexOf(":")));
+                }
+                else
+                {
+                    await DispatchToLuisModelAsync(context, intent);
+                }
             }
         }
 
@@ -259,7 +253,6 @@ namespace NLP_With_Dispatch_Bot
                         await context.SendActivityAsync(await DispatchToQnAMakerTextAsync(context, cancellationToken));
                         break;
                 }
-
             }
             else
             {
@@ -269,7 +262,6 @@ namespace NLP_With_Dispatch_Bot
 
         private async Task ProcessICampusModelAsync(ITurnContext context, RecognizerResult result, CancellationToken cancellationToken = default(CancellationToken))
         {
-
             var intent = result.Intents.First().Key.ToString();
 
             // Resolver intent de información general de campus
@@ -318,6 +310,5 @@ namespace NLP_With_Dispatch_Bot
 
             return entity;
         }
-
     }
 }
