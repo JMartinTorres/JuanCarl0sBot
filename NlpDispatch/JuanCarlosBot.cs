@@ -59,6 +59,7 @@ namespace NLP_With_Dispatch_Bot
 
         // The bot state accessor object. Use this to access specific state properties.
         private readonly WelcomeUserStateAccessors _welcomeUserStateAccessors;
+        private readonly CustomPromptBotAccessors _promptAccessors;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JuanCarlosBot"/> class.
@@ -80,6 +81,7 @@ namespace NLP_With_Dispatch_Bot
             }
 
             _welcomeUserStateAccessors = statePropertyAccessor ?? throw new System.ArgumentNullException("state accessor can't be null");
+            //_promptAccessors = _promptAccessors ?? throw new System.ArgumentNullException(nameof(_promptAccessors));
         }
 
         /// <summary>

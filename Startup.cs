@@ -121,7 +121,21 @@ namespace NLP_With_Dispatch_Bot
                 // Create Conversation State object.
                 // The Conversation State object is where we persist anything at the conversation-scope.
                 var userState = new UserState(dataStore);
+                ConversationState conversationState = new ConversationState(dataStore);
                 options.State.Add(userState);
+
+                // Create and register state accessors.
+                // Accessors created here are passed into the IBot-derived class on every turn.
+                services.AddSingleton<CustomPromptBotAccessors>(sp =>
+                {
+                    // Create the custom state accessor.
+                    return new CustomPromptBotAccessors(conversationState, userState)
+                    {
+                        ConversationFlowAccessor = conversationState.CreateProperty<ConversationFlow>(CustomPromptBotAccessors.ConversationFlowName),
+                        UserProfileAccessor = userState.CreateProperty<UserProfile>(CustomPromptBotAccessors.UserProfileName),
+                    };
+                });
+
             });
 
             // Create and register state accessors.
