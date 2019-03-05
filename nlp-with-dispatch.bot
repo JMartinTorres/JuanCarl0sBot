@@ -41,6 +41,16 @@
       "id": "9"
     },
     {
+      "type": "luis",
+      "name": "Usuario_URJC",
+      "appId": "61dfcfcd-a460-45b4-b562-7f150c1828cc",
+      "authoringKey": "939c8ed64e1d4736b2183c466523dac1",
+      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "version": "0.1",
+      "region": "westus",
+      "id": "10"
+    },
+    {
       "type": "qna",
       "name": "urjcbot-qna",
       "id": "201",
