@@ -100,42 +100,24 @@ namespace NLP_With_Dispatch_Bot
                 // is restarted, everything stored in memory will be gone.
                 IStorage dataStore = new MemoryStorage();
 
-                // For production bots use the Azure Blob or
-                // Azure CosmosDB storage providers. For the Azure
-                // based storage providers, add the Microsoft.Bot.Builder.Azure
-                // Nuget package to your solution. That package is found at:
-                // https://www.nuget.org/packages/Microsoft.Bot.Builder.Azure/
-                // Uncomment the following lines to use Azure Blob Storage
-                // //Storage configuration name or ID from the .bot file.
-                // const string StorageConfigurationId = "<STORAGE-NAME-OR-ID-FROM-BOT-FILE>";
-                // var blobConfig = botConfig.FindServiceByNameOrId(StorageConfigurationId);
-                // if (!(blobConfig is BlobStorageService blobStorageConfig))
-                // {
-                //    throw new InvalidOperationException($"The .bot file does not contain an blob storage with name '{StorageConfigurationId}'.");
-                // }
-                // // Default container name.
-                // const string DefaultBotContainer = "<DEFAULT-CONTAINER>";
-                // var storageContainer = string.IsNullOrWhiteSpace(blobStorageConfig.Container) ? DefaultBotContainer : blobStorageConfig.Container;
-                // IStorage dataStore = new Microsoft.Bot.Builder.Azure.AzureBlobStorage(blobStorageConfig.ConnectionString, storageContainer);
 
-                // Create Conversation State object.
-                // The Conversation State object is where we persist anything at the conversation-scope.
-                var userState = new UserState(dataStore);
-                ConversationState conversationState = new ConversationState(dataStore);
-                options.State.Add(userState);
+            });
 
-                // Create and register state accessors.
-                // Accessors created here are passed into the IBot-derived class on every turn.
-                services.AddSingleton<CustomPromptBotAccessors>(sp =>
+            // Create conversation and user state with in-memory storage provider.
+            IStorage storage = new MemoryStorage();
+            ConversationState conversationState = new ConversationState(storage);
+            UserState userState = new UserState(storage);
+
+            // Create and register state accessors.
+            // Accessors created here are passed into the IBot-derived class on every turn.
+            services.AddSingleton<CustomPromptBotAccessors>(sp =>
+            {
+                // Create the custom state accessor.
+                return new CustomPromptBotAccessors(conversationState, userState)
                 {
-                    // Create the custom state accessor.
-                    return new CustomPromptBotAccessors(conversationState, userState)
-                    {
-                        ConversationFlowAccessor = conversationState.CreateProperty<ConversationFlow>(CustomPromptBotAccessors.ConversationFlowName),
-                        UserProfileAccessor = userState.CreateProperty<UserProfile>(CustomPromptBotAccessors.UserProfileName),
-                    };
-                });
-
+                    ConversationFlowAccessor = conversationState.CreateProperty<ConversationFlow>(CustomPromptBotAccessors.ConversationFlowName),
+                    UserProfileAccessor = userState.CreateProperty<UserProfile>(CustomPromptBotAccessors.UserProfileName),
+                };
             });
 
             // Create and register state accessors.
@@ -148,7 +130,7 @@ namespace NLP_With_Dispatch_Bot
                     throw new InvalidOperationException("BotFrameworkOptions must be configured prior to setting up the State Accessors");
                 }
 
-                var userState = options.State.OfType<UserState>().FirstOrDefault();
+                //var userState2 = options.State.OfType<UserState>().FirstOrDefault();
                 if (userState == null)
                 {
                     throw new InvalidOperationException("UserState must be defined and added before adding user-scoped state accessors.");
