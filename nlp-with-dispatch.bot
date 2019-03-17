@@ -3,14 +3,6 @@
   "description": "",
   "services": [
     {
-      "type": "endpoint",
-      "id": "1",
-      "name": "development",
-      "appId": "",
-      "appPassword": "",
-      "endpoint": "http://localhost:3978/api/messages"
-    },
-    {
       "type": "luis",
       "name": "I_Campus",
       "appId": "e04f8ab2-a2fd-40b2-81b0-b08c2c564129",
