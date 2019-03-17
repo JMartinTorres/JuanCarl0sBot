@@ -83,15 +83,15 @@
       "serviceName": "JuanCarl0sBot",
       "name": "JuanCarl0sBot",
       "id": "1",
-      "appId": "c7e09488-a968-4336-aed9-1efc973e51e1"
+      "appId": "14ee6990-fc57-452e-bfde-03ecb4dd5217"
     },
     {
       "type": "blob",
-      "connectionString": "DefaultEndpointsProtocol=https;AccountName=juancarl0sbota856;AccountKey=hSvYxvS8IKFrvMqzCWCra7V/ezDGtzOIjGtSEYABbKeHyPf/2Jmg646oa3M5pV9rWE8S71Rab77/kroSgUueBg==;",
+      "connectionString": "DefaultEndpointsProtocol=https;AccountName=juancarl0sbot9de0;AccountKey=MGZ3jy5ZSWW3dEyaZrq5+UV1UvOs49CvRBIA3o2dJLCXHA749oTMie1YWt3N08CVu+cBJED/698I9PJSWhGxpA==;",
       "tenantId": "60428a9c-d7bc-46f0-a402-bbf5df292fe4",
       "subscriptionId": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
       "resourceGroup": "URJCBot_RG",
-      "serviceName": "juancarl0sbota856",
+      "serviceName": "juancarl0sbot9de0",
       "id": "2"
     },
     {
@@ -104,16 +104,16 @@
     },
     {
       "type": "endpoint",
-      "appId": "c7e09488-a968-4336-aed9-1efc973e51e1",
-      "appPassword": "5qO^=d](M5GBd;)r.hhseaed7g",
+      "appId": "14ee6990-fc57-452e-bfde-03ecb4dd5217",
+      "appPassword": "]B62G|uUq.oE_1Elc31rK6EC#&Q=+",
       "endpoint": "https://juancarl0sbot.azurewebsites.net/api/messages",
       "name": "production",
       "id": "4"
     },
     {
       "type": "appInsights",
-      "instrumentationKey": "65ac03e4-3c3a-4eb2-8da8-d0a4db7682f5",
-      "applicationId": "140973fd-c476-4e3c-a6f8-a738cd790c5d",
+      "instrumentationKey": "b5148994-d9aa-4eca-ae4a-dbf132555181",
+      "applicationId": "b742c3e1-ec37-4cb6-b7fa-780663881009",
       "apiKeys": {},
       "tenantId": "60428a9c-d7bc-46f0-a402-bbf5df292fe4",
       "subscriptionId": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
