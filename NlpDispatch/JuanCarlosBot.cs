@@ -172,7 +172,13 @@ namespace NLP_With_Dispatch_Bot
             // No se reconoce ningún intent.
             if (topIntent.Value.intent == noneDispatchKey)
             {
-                await context.SendActivityAsync($"Dispatch intent: {topIntent.Value.intent} ({topIntent.Value.score}).");
+                await context.SendActivityAsync($"Perdón, no te he entendido.");
+            }
+
+            // Pregunta guardada en QnA
+            else if (topIntent.Value.intent == qnaDispatchKey)
+            {
+                await DispatchToQnAMakerAsync(context, cancellationToken);
             }
 
             // Intent reconocido se envía a función de procesado de apps LUIS.
@@ -193,11 +199,11 @@ namespace NLP_With_Dispatch_Bot
         /// <summary>
         /// Dispatches the turn to the request QnAMaker app.
         /// </summary>
-        private async Task DispatchToQnAMakerAsync(ITurnContext context, string appName, CancellationToken cancellationToken = default(CancellationToken))
+        private async Task DispatchToQnAMakerAsync(ITurnContext context, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (!string.IsNullOrEmpty(context.Activity.Text))
             {
-                var results = await _services.QnAServices[appName].GetAnswersAsync(context);
+                var results = await _services.QnAServices[QnAMakerKey].GetAnswersAsync(context);
                 if (results.Any())
                 {
                     await context.SendActivityAsync(results.First().Answer, cancellationToken: cancellationToken);
@@ -209,7 +215,7 @@ namespace NLP_With_Dispatch_Bot
             }
         }
 
-        private async Task<string> DispatchToQnAMakerTextAsync(ITurnContext context, CancellationToken cancellationToken = default(CancellationToken))
+        private async Task<string> DispatchToQnAMakerTextAsync(ITurnContext context, CancellationToken cancellationToken = default(CancellationToken), bool firstTry = false)
         {
             if (!string.IsNullOrEmpty(context.Activity.Text))
             {
@@ -218,7 +224,7 @@ namespace NLP_With_Dispatch_Bot
                 {
                     return results.First().Answer;
                 }
-                else
+                else if (!firstTry)
                 {
                     await context.SendActivityAsync($"Perdón, no te he entendido.");
                 }

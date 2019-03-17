@@ -13,9 +13,9 @@
     {
       "type": "luis",
       "name": "I_Campus",
-      "appId": "3b5e3725-cd7f-4a27-b7ba-b9068eaaa675",
-      "authoringKey": "939c8ed64e1d4736b2183c466523dac1",
-      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "appId": "e04f8ab2-a2fd-40b2-81b0-b08c2c564129",
+      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
+      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
       "version": "0.1",
       "region": "westus",
       "id": "7"
@@ -23,9 +23,9 @@
     {
       "type": "luis",
       "name": "MyApps",
-      "appId": "8787718f-ac17-4dfe-95f6-4091e263b8c6",
-      "authoringKey": "939c8ed64e1d4736b2183c466523dac1",
-      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "appId": "71215a00-bf68-4819-a11f-6e6e5b32b9d5",
+      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
+      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
       "version": "0.1",
       "region": "westus",
       "id": "8"
@@ -33,9 +33,9 @@
     {
       "type": "luis",
       "name": "Conversacion",
-      "appId": "4e37cedd-b453-45de-aca3-0657001cb975",
-      "authoringKey": "939c8ed64e1d4736b2183c466523dac1",
-      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "appId": "e0fbf782-69fd-4662-bfbc-ae7f087d4be0",
+      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
+      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
       "version": "0.1",
       "region": "westus",
       "id": "9"
@@ -43,9 +43,9 @@
     {
       "type": "luis",
       "name": "Usuario_URJC",
-      "appId": "61dfcfcd-a460-45b4-b562-7f150c1828cc",
-      "authoringKey": "939c8ed64e1d4736b2183c466523dac1",
-      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "appId": "e5de2319-411f-4fa4-8fdd-682878122c38",
+      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
+      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
       "version": "0.1",
       "region": "westus",
       "id": "10"
@@ -53,9 +53,9 @@
     {
       "type": "luis",
       "name": "Portal",
-      "appId": "2b4d7a0e-d293-4d30-a33c-cc2c827b6612",
-      "authoringKey": "939c8ed64e1d4736b2183c466523dac1",
-      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "appId": "9a42467d-e4d6-476c-bd59-1b235c0e788a",
+      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
+      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
       "version": "0.1",
       "region": "westus",
       "id": "11"
@@ -64,10 +64,10 @@
       "type": "qna",
       "name": "urjcbot-qna",
       "id": "201",
-      "kbId": "ffcbf8e5-2f7b-4262-b30b-762149026328",
-      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
-      "endpointKey": "05e209fa-b394-4e70-b0e3-11df3ac8596c",
-      "hostname": "https://urjcbotqnaservice.azurewebsites.net/qnamaker"
+      "kbId": "87762948-4c27-4aed-bad4-b773fc9d7b63",
+      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
+      "endpointKey": "3d2f6be2-5574-4f1c-8d86-38bcbcb095e1",
+      "hostname": "https://urjcbotqna.azurewebsites.net/qnamaker"
     },
     {
       "type": "dispatch",
@@ -76,29 +76,30 @@
         "7"
       ],
       "name": "Dispatch",
-      "appId": "8d75fe24-cf91-4c88-b4b1-45f02d6e38c8",
-      "authoringKey": "939c8ed64e1d4736b2183c466523dac1",
-      "subscriptionKey": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "appId": "fd561661-4f98-4f2a-b2d0-cd43c5815b62",
+      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
+      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
       "version": "Dispatch",
       "region": "westus",
       "id": "161"
     },
     {
       "type": "abs",
-      "tenantId": "5cc4e629-69c2-4a00-a494-6ec8a7200dae",
-      "subscriptionId": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "tenantId": "60428a9c-d7bc-46f0-a402-bbf5df292fe4",
+      "subscriptionId": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
       "resourceGroup": "URJCBot_RG",
       "serviceName": "JuanCarl0sBot",
       "name": "JuanCarl0sBot",
       "id": "1",
-      "appId": "36268e00-4b55-4f95-a8ad-ef546af2cf5f"
+      "appId": "c7e09488-a968-4336-aed9-1efc973e51e1"
     },
     {
       "type": "blob",
-      "tenantId": "5cc4e629-69c2-4a00-a494-6ec8a7200dae",
-      "subscriptionId": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "connectionString": "DefaultEndpointsProtocol=https;AccountName=juancarl0sbota856;AccountKey=hSvYxvS8IKFrvMqzCWCra7V/ezDGtzOIjGtSEYABbKeHyPf/2Jmg646oa3M5pV9rWE8S71Rab77/kroSgUueBg==;",
+      "tenantId": "60428a9c-d7bc-46f0-a402-bbf5df292fe4",
+      "subscriptionId": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
       "resourceGroup": "URJCBot_RG",
-      "serviceName": "juancarl0sbot97ab",
+      "serviceName": "juancarl0sbota856",
       "id": "2"
     },
     {
@@ -111,21 +112,21 @@
     },
     {
       "type": "endpoint",
-      "appId": "36268e00-4b55-4f95-a8ad-ef546af2cf5f",
-      "appPassword": "l[oqiK+q0R:NvE;_n]m/r30}-Zc_3",
+      "appId": "c7e09488-a968-4336-aed9-1efc973e51e1",
+      "appPassword": "5qO^=d](M5GBd;)r.hhseaed7g",
       "endpoint": "https://juancarl0sbot.azurewebsites.net/api/messages",
       "name": "production",
       "id": "4"
     },
     {
       "type": "appInsights",
-      "instrumentationKey": "07935bbf-62e3-4420-ab43-f9b1a6432e6d",
-      "applicationId": "a4118fa3-8581-41d9-82f8-4c9a421570cf",
+      "instrumentationKey": "65ac03e4-3c3a-4eb2-8da8-d0a4db7682f5",
+      "applicationId": "140973fd-c476-4e3c-a6f8-a738cd790c5d",
       "apiKeys": {},
-      "tenantId": "5cc4e629-69c2-4a00-a494-6ec8a7200dae",
-      "subscriptionId": "9bf35477-01e8-4d14-ba84-392b6052705a",
+      "tenantId": "60428a9c-d7bc-46f0-a402-bbf5df292fe4",
+      "subscriptionId": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
       "resourceGroup": "URJCBot_RG",
-      "serviceName": "JuanCarl0sBot3olhpd",
+      "serviceName": "JuanCarl0sBotocr4r2",
       "id": "5"
     }
   ],
