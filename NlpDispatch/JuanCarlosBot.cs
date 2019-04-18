@@ -13,6 +13,8 @@ using Microsoft.Bot.Schema;
 using Microsoft.Recognizers.Text;
 using Microsoft.Recognizers.Text.DateTime;
 using Microsoft.Recognizers.Text.Number;
+using Microsoft.Bot.Builder.Dialogs;
+using Microsoft.Bot.Builder.Dialogs.Choices;
 
 namespace NLP_With_Dispatch_Bot
 {
@@ -52,6 +54,8 @@ namespace NLP_With_Dispatch_Bot
         /// </summary>
         private const string QnAMakerKey = "urjcbot-qna";
 
+        private static DialogSet _dialogSet;
+        private static ConversationFlowDialog testcfd = new ConversationFlowDialog();
         private static bool done = false;
 
         /// <summary>
@@ -85,6 +89,19 @@ namespace NLP_With_Dispatch_Bot
 
             _welcomeUserStateAccessors = statePropertyAccessor ?? throw new System.ArgumentNullException("state accessor can't be null");
             _promptAccessors = promptBotAccessors ?? throw new System.ArgumentNullException(nameof(_promptAccessors));
+
+            //var options = sp.GetRequiredService<IOptions<BotFrameworkOptions>>().Value;
+            //var conversationState = options.State.OfType<ConversationState>().FirstOrDefault();
+            //var accessors = new DialogPromptBotAccessors(conversationState)
+            //{
+            //    DialogStateAccessor = conversationState.CreateProperty<DialogState>(DialogPromptBotAccessors.DialogStateAccessorKey),
+            //    ReservationAccessor = conversationState.CreateProperty<DialogPromptBotAccessors.Reservation>(DialogPromptBotAccessors.ReservationAccessorKey),
+            //};
+
+            //testcfd.NQuestions = 1;
+            //ConversationFlowQuestion q = new ConversationFlowQuestion(new List<string>(new string[] { "que años tienes", "20", "25" }));
+            //testcfd.Questions = new List<ConversationFlowQuestion>(new List<ConversationFlowQuestion>(new ConversationFlowQuestion[] { q }));
+
         }
 
         /// <summary>
@@ -108,7 +125,7 @@ namespace NLP_With_Dispatch_Bot
                     ConversationFlow flow = await _promptAccessors.ConversationFlowAccessor.GetAsync(turnContext, () => new ConversationFlow());
                     UserProfile profile = await _promptAccessors.UserProfileAccessor.GetAsync(turnContext, () => new UserProfile());
 
-                    await FillOutUserProfileAsync(flow, profile, turnContext);
+                    await FillOutUserProfileAsync(flow, profile, turnContext, cancellationToken);
 
                     // Update state and save changes.
                     await _promptAccessors.ConversationFlowAccessor.SetAsync(turnContext, flow);
@@ -212,6 +229,7 @@ namespace NLP_With_Dispatch_Bot
                 {
                     if (results.First().Answer.StartsWith("#@$RESET#$@"))
                     {
+                        //flowQuestions.Add(results.First().Answer.Substring(0, 20));
                         done = false;
                     }
                     else
@@ -330,14 +348,15 @@ namespace NLP_With_Dispatch_Bot
             return entity;
         }
 
-        private static async Task FillOutUserProfileAsync(ConversationFlow flow, UserProfile profile, ITurnContext turnContext)
+        private static async Task FillOutUserProfileAsync(ConversationFlow flow, UserProfile profile, ITurnContext turnContext,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             string input = turnContext.Activity.Text?.Trim();
             string message;
             switch (flow.LastQuestionAsked)
             {
                 case ConversationFlow.Question.None:
-                    await turnContext.SendActivityAsync("Let's get started. What is your name?");
+                    //await turnContext.SendActivityAsync(flowQuestions.ElementAt(flowQuestions.Count-1));
                     flow.LastQuestionAsked = ConversationFlow.Question.Name;
                     break;
                 case ConversationFlow.Question.Name:
