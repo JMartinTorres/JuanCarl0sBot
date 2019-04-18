@@ -3,6 +3,7 @@
 
 using System;
 using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.Dialogs;
 
 namespace NLP_With_Dispatch_Bot
 {
@@ -17,9 +18,10 @@ namespace NLP_With_Dispatch_Bot
         /// Contains the <see cref="UserState"/> and associated <see cref="IStatePropertyAccessor{T}"/>.
         /// </summary>
         /// <param name="userState">The state object that stores the counter.</param>
-        public WelcomeUserStateAccessors(UserState userState)
+        public WelcomeUserStateAccessors(UserState userState, ConversationState conversationState)
         {
             UserState = userState ?? throw new ArgumentNullException(nameof(userState));
+            ConversationState = conversationState ?? throw new ArgumentNullException(nameof(conversationState));
         }
 
         /// <summary>
@@ -37,10 +39,16 @@ namespace NLP_With_Dispatch_Bot
         /// </value>
         public IStatePropertyAccessor<WelcomeUserState> WelcomeUserState { get; set; }
 
+        public IStatePropertyAccessor<DialogState> DialogStateAccessor { get; set; }
+
+        public IStatePropertyAccessor<JuanCarlosBot.Reservation> ReservationAccessor { get; set; }
+
         /// <summary>
         /// Gets the <see cref="UserState"/> object for the conversation.
         /// </summary>
         /// <value>The <see cref="UserState"/> object.</value>
         public UserState UserState { get; }
+
+        public ConversationState ConversationState { get; }
     }
 }

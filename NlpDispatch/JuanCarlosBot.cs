@@ -28,7 +28,19 @@ namespace NLP_With_Dispatch_Bot
     /// </summary>
     public class JuanCarlosBot : IBot
     {
+
+        public class Reservation
+        {
+            public int Size { get; set; }
+
+            public string Date { get; set; }
+        }
+
         private const string WelcomeText = "Soy JuanCarl0sBot, ¿en qué puedo ayudarte?";
+        private const string ReservationDialog = "reservationDialog";
+        private const string PartySizePrompt = "partyPrompt";
+        private const string LocationPrompt = "locationPrompt";
+        private const string ReservationDatePrompt = "reservationDatePrompt";
 
         /// <summary>
         /// Key in the Bot config (.bot file) for the Home Automation Luis instance.
@@ -90,17 +102,21 @@ namespace NLP_With_Dispatch_Bot
             _welcomeUserStateAccessors = statePropertyAccessor ?? throw new System.ArgumentNullException("state accessor can't be null");
             _promptAccessors = promptBotAccessors ?? throw new System.ArgumentNullException(nameof(_promptAccessors));
 
-            //var options = sp.GetRequiredService<IOptions<BotFrameworkOptions>>().Value;
-            //var conversationState = options.State.OfType<ConversationState>().FirstOrDefault();
-            //var accessors = new DialogPromptBotAccessors(conversationState)
-            //{
-            //    DialogStateAccessor = conversationState.CreateProperty<DialogState>(DialogPromptBotAccessors.DialogStateAccessorKey),
-            //    ReservationAccessor = conversationState.CreateProperty<DialogPromptBotAccessors.Reservation>(DialogPromptBotAccessors.ReservationAccessorKey),
-            //};
+            // Create the dialog set and add the prompts, including custom validation.
+            _dialogSet = new DialogSet(_welcomeUserStateAccessors.DialogStateAccessor);
+            _dialogSet.Add(new NumberPrompt<int>(PartySizePrompt, PartySizeValidatorAsync));
+            _dialogSet.Add(new ChoicePrompt(LocationPrompt));
+            _dialogSet.Add(new DateTimePrompt(ReservationDatePrompt, DateValidatorAsync));
 
-            //testcfd.NQuestions = 1;
-            //ConversationFlowQuestion q = new ConversationFlowQuestion(new List<string>(new string[] { "que años tienes", "20", "25" }));
-            //testcfd.Questions = new List<ConversationFlowQuestion>(new List<ConversationFlowQuestion>(new ConversationFlowQuestion[] { q }));
+            // Define the steps of the waterfall dialog and add it to the set.
+            WaterfallStep[] steps = new WaterfallStep[]
+            {
+                PromptForPartySizeAsync,
+                PromptForLocationAsync,
+                PromptForReservationDateAsync,
+                AcknowledgeReservationAsync,
+            };
+            _dialogSet.Add(new WaterfallDialog(ReservationDialog, steps));
 
         }
 
@@ -121,18 +137,52 @@ namespace NLP_With_Dispatch_Bot
             {
                 if (!done)
                 {
-                    // Get the state properties from the turn context.
-                    ConversationFlow flow = await _promptAccessors.ConversationFlowAccessor.GetAsync(turnContext, () => new ConversationFlow());
-                    UserProfile profile = await _promptAccessors.UserProfileAccessor.GetAsync(turnContext, () => new UserProfile());
+                    // Get the current reservation info from state.
+                    Reservation reservation = await _welcomeUserStateAccessors.ReservationAccessor.GetAsync(
+                        turnContext, () => null, cancellationToken);
 
-                    await FillOutUserProfileAsync(flow, profile, turnContext, cancellationToken);
+                    // Generate a dialog context for our dialog set.
+                    DialogContext dc = await _dialogSet.CreateContextAsync(turnContext, cancellationToken);
 
-                    // Update state and save changes.
-                    await _promptAccessors.ConversationFlowAccessor.SetAsync(turnContext, flow);
-                    await _promptAccessors.ConversationState.SaveChangesAsync(turnContext);
+                    if (dc.ActiveDialog is null)
+                    {
+                        // If there is no active dialog, check whether we have a reservation yet.
+                        if (reservation is null)
+                        {
+                            // If not, start the dialog.
+                            await dc.BeginDialogAsync(ReservationDialog, null, cancellationToken);
+                        }
+                        else
+                        {
+                            // Otherwise, send a status message.
+                            await turnContext.SendActivityAsync(
+                                $"We'll see you on {reservation.Date}.",
+                                cancellationToken: cancellationToken);
+                        }
+                    }
+                    else
+                    {
+                        // Continue the dialog.
+                        DialogTurnResult dialogTurnResult = await dc.ContinueDialogAsync(cancellationToken);
 
-                    await _promptAccessors.UserProfileAccessor.SetAsync(turnContext, profile);
-                    await _promptAccessors.UserState.SaveChangesAsync(turnContext);
+                        // If the dialog completed this turn, record the reservation info.
+                        if (dialogTurnResult.Status is DialogTurnStatus.Complete)
+                        {
+                            reservation = (Reservation)dialogTurnResult.Result;
+                            await _welcomeUserStateAccessors.ReservationAccessor.SetAsync(
+                                turnContext,
+                                reservation,
+                                cancellationToken);
+
+                            // Send a confirmation message to the user.
+                            await turnContext.SendActivityAsync(
+                                $"Your party of {reservation.Size} is confirmed for {reservation.Date}.",
+                                cancellationToken: cancellationToken);
+                        }
+                    }
+
+                    // Save the updated dialog state into the conversation state.
+                    await _welcomeUserStateAccessors.ConversationState.SaveChangesAsync(turnContext, false, cancellationToken);
                 }
                 else
                 {
@@ -348,186 +398,173 @@ namespace NLP_With_Dispatch_Bot
             return entity;
         }
 
-        private static async Task FillOutUserProfileAsync(ConversationFlow flow, UserProfile profile, ITurnContext turnContext,
+        private async Task<DialogTurnResult> PromptForPartySizeAsync(
+            WaterfallStepContext stepContext,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            string input = turnContext.Activity.Text?.Trim();
-            string message;
-            switch (flow.LastQuestionAsked)
-            {
-                case ConversationFlow.Question.None:
-                    //await turnContext.SendActivityAsync(flowQuestions.ElementAt(flowQuestions.Count-1));
-                    flow.LastQuestionAsked = ConversationFlow.Question.Name;
-                    break;
-                case ConversationFlow.Question.Name:
-                    if (ValidateName(input, out string name, out message))
-                    {
-                        profile.Name = name;
-                        await turnContext.SendActivityAsync($"Hi {profile.Name}.");
-                        await turnContext.SendActivityAsync("How old are you?");
-                        flow.LastQuestionAsked = ConversationFlow.Question.Age;
-                        break;
-                    }
-                    else
-                    {
-                        await turnContext.SendActivityAsync(message ?? "I'm sorry, I didn't understand that.");
-                        break;
-                    }
+            // Prompt for the party size. The result of the prompt is returned to the next step of the waterfall.
 
-                case ConversationFlow.Question.Age:
-                    if (ValidateAge(input, out int age, out message))
-                    {
-                        profile.Age = age;
-                        await turnContext.SendActivityAsync($"I have your age as {profile.Age}.");
-                        await turnContext.SendActivityAsync("When is your flight?");
-                        flow.LastQuestionAsked = ConversationFlow.Question.Date;
-                        break;
-                    }
-                    else
-                    {
-                        await turnContext.SendActivityAsync(message ?? "I'm sorry, I didn't understand that.");
-                        break;
-                    }
 
-                case ConversationFlow.Question.Date:
-                    if (ValidateDate(input, out string date, out message))
-                    {
-                        profile.Date = date;
-                        await turnContext.SendActivityAsync($"Your cab ride to the airport is scheduled for {profile.Date}.");
-                        await turnContext.SendActivityAsync($"Thanks for completing the booking {profile.Name}.");
-                        await turnContext.SendActivityAsync($"Type anything to run the bot again.");
-                        flow.LastQuestionAsked = ConversationFlow.Question.None;
-                        done = true;
-                        profile = new UserProfile();
-                        break;
-                    }
-                    else
-                    {
-                        await turnContext.SendActivityAsync(message ?? "I'm sorry, I didn't understand that.");
-                        break;
-                    }
-            }
+
+
+            return await stepContext.PromptAsync(
+                 PartySizePrompt,
+                 new PromptOptions
+                 {
+                     Prompt = MessageFactory.Text("How many people is the reservation for?"),
+                     RetryPrompt = MessageFactory.Text("How large is your party?"),
+                 },
+                 cancellationToken);
+
         }
 
-        /// <summary>
-        /// Validates name input.
-        /// </summary>
-        /// <param name="input">The user's input.</param>
-        /// <param name="name">When the method returns, contains the normalized name, if validation succeeded.</param>
-        /// <param name="message">When the method returns, contains a message with which to reprompt, if validation failed.</param>
-        /// <returns>indicates whether validation succeeded.</returns>
-        private static bool ValidateName(string input, out string name, out string message)
+        private async Task<DialogTurnResult> PromptForLocationAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            name = null;
-            message = null;
+            // Record the party size information in the current dialog state.
+            int size = (int)stepContext.Result;
+            stepContext.Values["size"] = size;
 
-            if (string.IsNullOrWhiteSpace(input))
-            {
-                message = "Please enter a name that contains at least one character.";
-            }
-            else
-            {
-                name = input.Trim();
-            }
-
-            return message is null;
-        }
-
-        /// <summary>
-        /// Validates age input.
-        /// </summary>
-        /// <param name="input">The user's input.</param>
-        /// <param name="age">When the method returns, contains the normalized age, if validation succeeded.</param>
-        /// <param name="message">When the method returns, contains a message with which to reprompt, if validation failed.</param>
-        /// <returns>indicates whether validation succeeded.</returns>
-        private static bool ValidateAge(string input, out int age, out string message)
-        {
-            age = 0;
-            message = null;
-
-            // Try to recognize the input as a number. This works for responses such as "twelve" as well as "12".
-            try
-            {
-                // Attempt to convert the Recognizer result to an integer. This works for "a dozen", "twelve", "12", and so on.
-                // The recognizer returns a list of potential recognition results, if any.
-                List<ModelResult> results = NumberRecognizer.RecognizeNumber(input, Culture.English);
-                foreach (ModelResult result in results)
+            return await stepContext.PromptAsync(
+                "locationPrompt",
+                new PromptOptions
                 {
-                    // The result resolution is a dictionary, where the "value" entry contains the processed string.
-                    if (result.Resolution.TryGetValue("value", out object value))
-                    {
-                        age = Convert.ToInt32(value);
-                        if (age >= 18 && age <= 120)
-                        {
-                            return true;
-                        }
-                    }
-                }
-
-                message = "Please enter an age between 18 and 120.";
-            }
-            catch
-            {
-                message = "I'm sorry, I could not interpret that as an age. Please enter an age between 18 and 120.";
-            }
-
-            return message is null;
+                    Prompt = MessageFactory.Text("Please choose a location."),
+                    RetryPrompt = MessageFactory.Text("Sorry, please choose a location from the list."),
+                    Choices = ChoiceFactory.ToChoices(new List<string> { "Redmond", "Bellevue", "Seattle" }),
+                },
+                cancellationToken);
         }
 
-        /// <summary>
-        /// Validates flight time input.
-        /// </summary>
-        /// <param name="input">The user's input.</param>
-        /// <param name="date">When the method returns, contains the normalized date, if validation succeeded.</param>
-        /// <param name="message">When the method returns, contains a message with which to reprompt, if validation failed.</param>
-        /// <returns>indicates whether validation succeeded.</returns>
-        private static bool ValidateDate(string input, out string date, out string message)
+        /// <summary>Second step of the main dialog: record the party size and prompt for the
+        /// reservation date.</summary>
+        /// <param name="stepContext">The context for the waterfall step.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        /// <remarks>If the task is successful, the result contains information from this step.</remarks>
+        private async Task<DialogTurnResult> PromptForReservationDateAsync(
+            WaterfallStepContext stepContext,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            date = null;
-            message = null;
+            // Record the party size information in the current dialog state.
+            var location = stepContext.Result;
+            stepContext.Values["location"] = location;
 
-            // Try to recognize the input as a date-time. This works for responses such as "11/14/2018", "9pm", "tomorrow", "Sunday at 5pm", and so on.
-            // The recognizer returns a list of potential recognition results, if any.
-            try
-            {
-                List<ModelResult> results = DateTimeRecognizer.RecognizeDateTime(input, Culture.English);
-
-                // Check whether any of the recognized date-times are appropriate,
-                // and if so, return the first appropriate date-time. We're checking for a value at least an hour in the future.
-                DateTime earliest = DateTime.Now.AddHours(1.0);
-                foreach (ModelResult result in results)
+            // Prompt for the party size. The result of the prompt is returned to the next step of the waterfall.
+            return await stepContext.PromptAsync(
+                ReservationDatePrompt,
+                new PromptOptions
                 {
-                    // The result resolution is a dictionary, where the "values" entry contains the processed input.
-                    List<Dictionary<string, string>> resolutions = result.Resolution["values"] as List<Dictionary<string, string>>;
-                    foreach (Dictionary<string, string> resolution in resolutions)
-                    {
-                        // The processed input contains a "value" entry if it is a date-time value, or "start" and
-                        // "end" entries if it is a date-time range.
-                        if (resolution.TryGetValue("value", out string dateString)
-                            || resolution.TryGetValue("start", out dateString))
-                        {
-                            if (DateTime.TryParse(dateString, out DateTime candidate)
-                                && earliest < candidate)
-                            {
-                                date = candidate.ToShortDateString();
-                                return true;
-                            }
-                        }
-                    }
-                }
+                    Prompt = MessageFactory.Text("Great. When will the reservation be for?"),
+                    RetryPrompt = MessageFactory.Text("What time should we make your reservation for?"),
+                },
+                cancellationToken);
+        }
 
-                message = "I'm sorry, please enter a date at least an hour out.";
-            }
-            catch
+        /// <summary>Third step of the main dialog: return the collected party size and reservation date.</summary>
+        /// <param name="stepContext">The context for the waterfall step.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        /// <remarks>If the task is successful, the result contains information from this step.</remarks>
+        private async Task<DialogTurnResult> AcknowledgeReservationAsync(
+            WaterfallStepContext stepContext,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            // Retrieve the reservation date.
+            DateTimeResolution resolution = (stepContext.Result as IList<DateTimeResolution>).First();
+            string time = resolution.Value ?? resolution.Start;
+
+            // Send an acknowledgement to the user.
+            await stepContext.Context.SendActivityAsync(
+                "Thank you. We will confirm your reservation shortly.",
+                cancellationToken: cancellationToken);
+
+            // Return the collected information to the parent context.
+            Reservation reservation = new Reservation
             {
-                message = "I'm sorry, I could not interpret that as an appropriate date. Please enter a date at least an hour out.";
+                Date = time,
+                Size = (int)stepContext.Values["size"],
+            };
+            done = true;
+            return await stepContext.EndDialogAsync(reservation, cancellationToken);
+        }
+
+        /// <summary>Validates whether the party size is appropriate to make a reservation.</summary>
+        /// <param name="promptContext">The validation context.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        /// <remarks>Reservations can be made for groups of 6 to 20 people.
+        /// If the task is successful, the result indicates whether the input was valid.</remarks>
+        private async Task<bool> PartySizeValidatorAsync(
+            PromptValidatorContext<int> promptContext,
+            CancellationToken cancellationToken)
+        {
+            // Check whether the input could be recognized as an integer.
+            if (!promptContext.Recognized.Succeeded)
+            {
+                await promptContext.Context.SendActivityAsync(
+                    "I'm sorry, I do not understand. Please enter the number of people in your party.",
+                    cancellationToken: cancellationToken);
+                return false;
             }
 
+            // Check whether the party size is appropriate.
+            int size = promptContext.Recognized.Value;
+            if (size < 6 || size > 20)
+            {
+                await promptContext.Context.SendActivityAsync(
+                    "Sorry, we can only take reservations for parties of 6 to 20.",
+                    cancellationToken: cancellationToken);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>Validates whether the reservation date is appropriate.</summary>
+        /// <param name="promptContext">The validation context.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        /// <remarks>Reservations must be made at least an hour in advance.
+        /// If the task is successful, the result indicates whether the input was valid.</remarks>
+        private async Task<bool> DateValidatorAsync(
+            PromptValidatorContext<IList<DateTimeResolution>> promptContext,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            // Check whether the input could be recognized as an integer.
+            if (!promptContext.Recognized.Succeeded)
+            {
+                await promptContext.Context.SendActivityAsync(
+                    "I'm sorry, I do not understand. Please enter the date or time for your reservation.",
+                    cancellationToken: cancellationToken);
+                return false;
+            }
+
+            // Check whether any of the recognized date-times are appropriate,
+            // and if so, return the first appropriate date-time.
+            DateTime earliest = DateTime.Now.AddHours(1.0);
+            DateTimeResolution value = promptContext.Recognized.Value.FirstOrDefault(v =>
+                DateTime.TryParse(v.Value ?? v.Start, out DateTime time) && DateTime.Compare(earliest, time) <= 0);
+            if (value != null)
+            {
+                promptContext.Recognized.Value.Clear();
+                promptContext.Recognized.Value.Add(value);
+                return true;
+            }
+
+            await promptContext.Context.SendActivityAsync(
+                    "I'm sorry, we can't take reservations earlier than an hour from now.",
+                    cancellationToken: cancellationToken);
             return false;
         }
+
     }
 }
 
+//////// Welcome (evitar que el usuario tenga que iniciar la conversación, no logrado)
 
 //// use state accessor to extract the didBotWelcomeUser flag
 //var didBotWelcomeUser = await _welcomeUserStateAccessors.WelcomeUserState.GetAsync(turnContext, () => new WelcomeUserState());
@@ -544,4 +581,186 @@ namespace NLP_With_Dispatch_Bot
 
 //    await turnContext.SendActivityAsync($"You are seeing this message because this was your first message ever to this bot.", cancellationToken: cancellationToken);
 //    await turnContext.SendActivityAsync($"It is a good practice to welcome the user and provide personal greeting. For example, welcome {userName}.", cancellationToken: cancellationToken);
+//}
+
+
+///////// ConversationFlow (validaciones; ¿prompt de opciones no es posible?)
+//        private static async Task FillOutUserProfileAsync(ConversationFlow flow, UserProfile profile, ITurnContext turnContext,
+//                    CancellationToken cancellationToken = default(CancellationToken))
+//        {
+//            string input = turnContext.Activity.Text?.Trim();
+//            string message;
+//            switch (flow.LastQuestionAsked)
+//            {
+//                case ConversationFlow.Question.None:
+//                    //await turnContext.SendActivityAsync(flowQuestions.ElementAt(flowQuestions.Count-1));
+//                    flow.LastQuestionAsked = ConversationFlow.Question.Name;
+//                    break;
+//                case ConversationFlow.Question.Name:
+//                    if (ValidateName(input, out string name, out message))
+//                    {
+//                        profile.Name = name;
+//                        await turnContext.SendActivityAsync($"Hi {profile.Name}.");
+//                        await turnContext.SendActivityAsync("How old are you?");
+//                        flow.LastQuestionAsked = ConversationFlow.Question.Age;
+//                        break;
+//                    }
+//                    else
+//                    {
+//                        await turnContext.SendActivityAsync(message ?? "I'm sorry, I didn't understand that.");
+//                        break;
+//                    }
+
+//                case ConversationFlow.Question.Age:
+//                    if (ValidateAge(input, out int age, out message))
+//                    {
+//                        profile.Age = age;
+//                        await turnContext.SendActivityAsync($"I have your age as {profile.Age}.");
+//                        await turnContext.SendActivityAsync("When is your flight?");
+//                        flow.LastQuestionAsked = ConversationFlow.Question.Date;
+//                        break;
+//                    }
+//                    else
+//                    {
+//                        await turnContext.SendActivityAsync(message ?? "I'm sorry, I didn't understand that.");
+//                        break;
+//                    }
+
+//                case ConversationFlow.Question.Date:
+//                    if (ValidateDate(input, out string date, out message))
+//                    {
+//                        profile.Date = date;
+//                        await turnContext.SendActivityAsync($"Your cab ride to the airport is scheduled for {profile.Date}.");
+//                        await turnContext.SendActivityAsync($"Thanks for completing the booking {profile.Name}.");
+//                        await turnContext.SendActivityAsync($"Type anything to run the bot again.");
+//                        flow.LastQuestionAsked = ConversationFlow.Question.None;
+//                        done = true;
+//                        profile = new UserProfile();
+//                        break;
+//                    }
+//                    else
+//                    {
+//                        await turnContext.SendActivityAsync(message ?? "I'm sorry, I didn't understand that.");
+//                        break;
+//                    }
+//            }
+//        }
+
+//        /// <summary>
+//        /// Validates name input.
+//        /// </summary>
+//        /// <param name="input">The user's input.</param>
+//        /// <param name="name">When the method returns, contains the normalized name, if validation succeeded.</param>
+//        /// <param name="message">When the method returns, contains a message with which to reprompt, if validation failed.</param>
+//        /// <returns>indicates whether validation succeeded.</returns>
+//        private static bool ValidateName(string input, out string name, out string message)
+//        {
+//            name = null;
+//            message = null;
+
+//            if (string.IsNullOrWhiteSpace(input))
+//            {
+//                message = "Please enter a name that contains at least one character.";
+//            }
+//            else
+//            {
+//                name = input.Trim();
+//            }
+
+//            return message is null;
+//        }
+
+//        /// <summary>
+//        /// Validates age input.
+//        /// </summary>
+//        /// <param name="input">The user's input.</param>
+//        /// <param name="age">When the method returns, contains the normalized age, if validation succeeded.</param>
+//        /// <param name="message">When the method returns, contains a message with which to reprompt, if validation failed.</param>
+//        /// <returns>indicates whether validation succeeded.</returns>
+//        private static bool ValidateAge(string input, out int age, out string message)
+//        {
+//            age = 0;
+//            message = null;
+
+//            // Try to recognize the input as a number. This works for responses such as "twelve" as well as "12".
+//            try
+//            {
+//                // Attempt to convert the Recognizer result to an integer. This works for "a dozen", "twelve", "12", and so on.
+//                // The recognizer returns a list of potential recognition results, if any.
+//                List<ModelResult> results = NumberRecognizer.RecognizeNumber(input, Culture.English);
+//                foreach (ModelResult result in results)
+//                {
+//                    // The result resolution is a dictionary, where the "value" entry contains the processed string.
+//                    if (result.Resolution.TryGetValue("value", out object value))
+//                    {
+//                        age = Convert.ToInt32(value);
+//                        if (age >= 18 && age <= 120)
+//                        {
+//                            return true;
+//                        }
+//                    }
+//                }
+
+//                message = "Please enter an age between 18 and 120.";
+//            }
+//            catch
+//            {
+//                message = "I'm sorry, I could not interpret that as an age. Please enter an age between 18 and 120.";
+//            }
+
+//            return message is null;
+//        }
+
+//        /// <summary>
+//        /// Validates flight time input.
+//        /// </summary>
+//        /// <param name="input">The user's input.</param>
+//        /// <param name="date">When the method returns, contains the normalized date, if validation succeeded.</param>
+//        /// <param name="message">When the method returns, contains a message with which to reprompt, if validation failed.</param>
+//        /// <returns>indicates whether validation succeeded.</returns>
+//        private static bool ValidateDate(string input, out string date, out string message)
+//        {
+//            date = null;
+//            message = null;
+
+//            // Try to recognize the input as a date-time. This works for responses such as "11/14/2018", "9pm", "tomorrow", "Sunday at 5pm", and so on.
+//            // The recognizer returns a list of potential recognition results, if any.
+//            try
+//            {
+//                List<ModelResult> results = DateTimeRecognizer.RecognizeDateTime(input, Culture.English);
+
+//                // Check whether any of the recognized date-times are appropriate,
+//                // and if so, return the first appropriate date-time. We're checking for a value at least an hour in the future.
+//                DateTime earliest = DateTime.Now.AddHours(1.0);
+//                foreach (ModelResult result in results)
+//                {
+//                    // The result resolution is a dictionary, where the "values" entry contains the processed input.
+//                    List<Dictionary<string, string>> resolutions = result.Resolution["values"] as List<Dictionary<string, string>>;
+//                    foreach (Dictionary<string, string> resolution in resolutions)
+//                    {
+//                        // The processed input contains a "value" entry if it is a date-time value, or "start" and
+//                        // "end" entries if it is a date-time range.
+//                        if (resolution.TryGetValue("value", out string dateString)
+//                            || resolution.TryGetValue("start", out dateString))
+//                        {
+//                            if (DateTime.TryParse(dateString, out DateTime candidate)
+//                                && earliest < candidate)
+//                            {
+//                                date = candidate.ToShortDateString();
+//                                return true;
+//                            }
+//                        }
+//                    }
+//                }
+
+//                message = "I'm sorry, please enter a date at least an hour out.";
+//            }
+//            catch
+//            {
+//                message = "I'm sorry, I could not interpret that as an appropriate date. Please enter a date at least an hour out.";
+//            }
+
+//            return false;
+//        }
+//    }
 //}
