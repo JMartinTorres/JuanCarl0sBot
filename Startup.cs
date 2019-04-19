@@ -59,15 +59,17 @@ namespace NLP_With_Dispatch_Bot
         /// <seealso cref="https://docs.microsoft.com/en-us/aspnet/web-api/overview/advanced/dependency-injection"/>
         public void ConfigureServices(IServiceCollection services)
         {
-            var secretKey = Configuration.GetSection("botFileSecret")?.Value;
-            var botFilePath = Configuration.GetSection("botFilePath")?.Value;
-            if (!File.Exists(botFilePath))
-            {
-                throw new FileNotFoundException($"The .bot configuration file was not found. botFilePath: {botFilePath}");
-            }
+            //var secretKey = Configuration.GetSection("botFileSecret")?.Value;
+            //var botFilePath = Configuration.GetSection("botFilePath")?.Value;
+            //if (!File.Exists(botFilePath))
+            //{
+            //    throw new FileNotFoundException($"The .bot configuration file was not found. botFilePath: {botFilePath}");
+            //}
+
+            var botFilePath = @"appsettings.json";
 
             // Loads .bot configuration file and adds a singleton that your Bot can access through dependency injection.
-            var botConfig = BotConfiguration.Load(botFilePath ?? @".\nlp-with-dispatch.bot", secretKey);
+            var botConfig = BotConfiguration.Load(botFilePath ?? @".\nlp-with-dispatch.bot", string.Empty);
             services.AddSingleton(sp => botConfig ?? throw new InvalidOperationException($"The .bot configuration file could not be loaded. botFilePath: {botFilePath}"));
 
             // Retrieve current endpoint.
@@ -84,7 +86,9 @@ namespace NLP_With_Dispatch_Bot
 
             services.AddBot<JuanCarlosBot>(options =>
             {
-
+                var appId = Configuration.GetSection("MicrosoftAppId").Value;
+                var appPassword = Configuration.GetSection("MicrosoftAppPassword").Value;
+                options.CredentialProvider = new SimpleCredentialProvider(appId, appPassword);
                 options.CredentialProvider = new SimpleCredentialProvider(endpointService.AppId, endpointService.AppPassword);
 
                 // Creates a logger for the application to use.

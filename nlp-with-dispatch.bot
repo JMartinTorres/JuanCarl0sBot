@@ -5,9 +5,9 @@
     {
       "type": "luis",
       "name": "I_Campus",
-      "appId": "e04f8ab2-a2fd-40b2-81b0-b08c2c564129",
-      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
-      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
+      "appId": "687f6190-dd67-477a-b75e-ea0619b855a2",
+      "authoringKey": "60c91424069246df89a4d7bdd44e9610",
+      "subscriptionKey": "183c7c10-5117-4b0f-9b96-e60860c23fb6",
       "version": "0.1",
       "region": "westus",
       "id": "7"
@@ -15,9 +15,9 @@
     {
       "type": "luis",
       "name": "MyApps",
-      "appId": "71215a00-bf68-4819-a11f-6e6e5b32b9d5",
-      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
-      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
+      "appId": "9001cecc-93d5-4d15-bee5-fac1f3cce70a",
+      "authoringKey": "60c91424069246df89a4d7bdd44e9610",
+      "subscriptionKey": "183c7c10-5117-4b0f-9b96-e60860c23fb6",
       "version": "0.1",
       "region": "westus",
       "id": "8"
@@ -25,9 +25,9 @@
     {
       "type": "luis",
       "name": "Conversacion",
-      "appId": "e0fbf782-69fd-4662-bfbc-ae7f087d4be0",
-      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
-      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
+      "appId": "7111c66d-9f5f-432f-af97-82e1eb90fc0c",
+      "authoringKey": "60c91424069246df89a4d7bdd44e9610",
+      "subscriptionKey": "183c7c10-5117-4b0f-9b96-e60860c23fb6",
       "version": "0.1",
       "region": "westus",
       "id": "9"
@@ -35,9 +35,9 @@
     {
       "type": "luis",
       "name": "Usuario_URJC",
-      "appId": "e5de2319-411f-4fa4-8fdd-682878122c38",
-      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
-      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
+      "appId": "ed2af16a-c262-420a-a80a-d2a84de7d406",
+      "authoringKey": "60c91424069246df89a4d7bdd44e9610",
+      "subscriptionKey": "183c7c10-5117-4b0f-9b96-e60860c23fb6",
       "version": "0.1",
       "region": "westus",
       "id": "10"
@@ -45,9 +45,9 @@
     {
       "type": "luis",
       "name": "Portal",
-      "appId": "9a42467d-e4d6-476c-bd59-1b235c0e788a",
-      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
-      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
+      "appId": "529dda8b-7b74-4063-9c60-70807a55e46a",
+      "authoringKey": "60c91424069246df89a4d7bdd44e9610",
+      "subscriptionKey": "183c7c10-5117-4b0f-9b96-e60860c23fb6",
       "version": "0.1",
       "region": "westus",
       "id": "11"
@@ -56,10 +56,10 @@
       "type": "qna",
       "name": "urjcbot-qna",
       "id": "201",
-      "kbId": "87762948-4c27-4aed-bad4-b773fc9d7b63",
-      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
-      "endpointKey": "3d2f6be2-5574-4f1c-8d86-38bcbcb095e1",
-      "hostname": "https://urjcbotqna.azurewebsites.net/qnamaker"
+      "kbId": "6e1f85fe-8495-4037-8ff2-c2f636b75dd6",
+      "subscriptionKey": "183c7c10-5117-4b0f-9b96-e60860c23fb6",
+      "endpointKey": "78ddfc7c-c10f-42a3-944a-cb6a28f67367",
+      "hostname": "https://urjcbotqnaservice.azurewebsites.net/qnamaker"
     },
     {
       "type": "dispatch",
@@ -68,9 +68,9 @@
         "7"
       ],
       "name": "Dispatch",
-      "appId": "fd561661-4f98-4f2a-b2d0-cd43c5815b62",
-      "authoringKey": "925d477012ca44b2980ad317d2719b3e",
-      "subscriptionKey": "25408ee9-1525-4c50-ae33-6cb86ed0e9bf",
+      "appId": "82436342-dbd9-4f9d-af4d-742b5b2c20cc",
+      "authoringKey": "60c91424069246df89a4d7bdd44e9610",
+      "subscriptionKey": "183c7c10-5117-4b0f-9b96-e60860c23fb6",
       "version": "Dispatch",
       "region": "westus",
       "id": "161"

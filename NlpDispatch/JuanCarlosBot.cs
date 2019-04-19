@@ -68,7 +68,7 @@ namespace NLP_With_Dispatch_Bot
 
         private static DialogSet _dialogSet;
         private static ConversationFlowDialog testcfd = new ConversationFlowDialog();
-        private static bool done = false;
+        private static bool done = true;
 
         /// <summary>
         /// Services configured from the ".bot" file.
@@ -256,9 +256,9 @@ namespace NLP_With_Dispatch_Bot
             else
             {
                 var intent = topIntent.Value.intent;
-                if (intent.Contains(":"))
+                if (intent.Contains(";"))
                 {
-                    await DispatchToLuisModelAsync(context, intent.Substring(0, intent.IndexOf(":")));
+                    await DispatchToLuisModelAsync(context, intent.Substring(0, intent.IndexOf(";")));
                 }
                 else
                 {
