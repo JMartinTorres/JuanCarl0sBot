@@ -7,8 +7,18 @@ namespace NLP_With_Dispatch_Bot
 {
     public class ConversationFlowQuestion
     {
-        public ConversationFlowQuestion(List<string> questions) => Items = questions;
 
-        public List<string> Items { get; set; }
+        public string Question { get; set; }
+        public List<string> Choices { get; set; }
+        public bool SaveAnswer { get; set; }
+
+        public ConversationFlowQuestion() { }
+
+
+        public ConversationFlowQuestion(string question, List<string> choices)
+        {
+            Question = question;
+            Choices = choices;
+        }
     }
 }

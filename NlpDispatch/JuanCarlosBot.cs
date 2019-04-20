@@ -69,6 +69,8 @@ namespace NLP_With_Dispatch_Bot
         private static DialogSet _dialogSet;
         private static ConversationFlowDialog testcfd = new ConversationFlowDialog();
         private static bool done = true;
+        private static int phase = 0;
+        private static ITurnContext turnContext;
 
         /// <summary>
         /// Services configured from the ".bot" file.
@@ -102,21 +104,21 @@ namespace NLP_With_Dispatch_Bot
             _welcomeUserStateAccessors = statePropertyAccessor ?? throw new System.ArgumentNullException("state accessor can't be null");
             _promptAccessors = promptBotAccessors ?? throw new System.ArgumentNullException(nameof(_promptAccessors));
 
-            // Create the dialog set and add the prompts, including custom validation.
-            _dialogSet = new DialogSet(_welcomeUserStateAccessors.DialogStateAccessor);
-            _dialogSet.Add(new NumberPrompt<int>(PartySizePrompt, PartySizeValidatorAsync));
-            _dialogSet.Add(new ChoicePrompt(LocationPrompt));
-            _dialogSet.Add(new DateTimePrompt(ReservationDatePrompt, DateValidatorAsync));
+            //// Create the dialog set and add the prompts, including custom validation.
+            //_dialogSet = new DialogSet(_welcomeUserStateAccessors.DialogStateAccessor);
+            //_dialogSet.Add(new NumberPrompt<int>(PartySizePrompt, PartySizeValidatorAsync));
+            //_dialogSet.Add(new ChoicePrompt(LocationPrompt));
+            //_dialogSet.Add(new DateTimePrompt(ReservationDatePrompt, DateValidatorAsync));
 
-            // Define the steps of the waterfall dialog and add it to the set.
-            WaterfallStep[] steps = new WaterfallStep[]
-            {
-                PromptForPartySizeAsync,
-                PromptForLocationAsync,
-                PromptForReservationDateAsync,
-                AcknowledgeReservationAsync,
-            };
-            _dialogSet.Add(new WaterfallDialog(ReservationDialog, steps));
+            //// Define the steps of the waterfall dialog and add it to the set.
+            //WaterfallStep[] steps = new WaterfallStep[]
+            //{
+            //    PromptForPartySizeAsync,
+            //    //PromptForLocationAsync,
+            //    //PromptForReservationDateAsync,
+            //    //AcknowledgeReservationAsync,
+            //};
+            //_dialogSet.Add(new WaterfallDialog(ReservationDialog, steps));
 
         }
 
@@ -168,21 +170,12 @@ namespace NLP_With_Dispatch_Bot
                         // If the dialog completed this turn, record the reservation info.
                         if (dialogTurnResult.Status is DialogTurnStatus.Complete)
                         {
-                            reservation = (Reservation)dialogTurnResult.Result;
-                            await _welcomeUserStateAccessors.ReservationAccessor.SetAsync(
-                                turnContext,
-                                reservation,
-                                cancellationToken);
-
-                            // Send a confirmation message to the user.
-                            await turnContext.SendActivityAsync(
-                                $"Your party of {reservation.Size} is confirmed for {reservation.Date}.",
-                                cancellationToken: cancellationToken);
+                           
                         }
                     }
 
-                    // Save the updated dialog state into the conversation state.
-                    await _welcomeUserStateAccessors.ConversationState.SaveChangesAsync(turnContext, false, cancellationToken);
+                    //// Save the updated dialog state into the conversation state.
+                    //await _welcomeUserStateAccessors.ConversationState.SaveChangesAsync(turnContext, false, cancellationToken);
                 }
                 else
                 {
@@ -199,6 +192,10 @@ namespace NLP_With_Dispatch_Bot
                         await DispatchToTopIntentAsync(turnContext, topIntent, cancellationToken);
                     }
                 }
+
+                // Save the updated dialog state into the conversation state.
+                await _welcomeUserStateAccessors.ConversationState.SaveChangesAsync(turnContext, false, cancellationToken);
+
             }
             else if (turnContext.Activity.Type == ActivityTypes.ConversationUpdate)
             {
@@ -269,6 +266,7 @@ namespace NLP_With_Dispatch_Bot
 
         /// <summary>
         /// Dispatches the turn to the request QnAMaker app.
+        /// Displays result
         /// </summary>
         private async Task DispatchToQnAMakerAsync(ITurnContext context, CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -283,6 +281,17 @@ namespace NLP_With_Dispatch_Bot
                         done = false;
                     }
                     else
+                    // Para poder responder de forma precisa al usuario es necesario plantearle una o varias preguntas antes: se inicia un diálogo del que se extrae información
+                    if (results.First().Answer.StartsWith("#@INIT_DIALOG#@"))
+                    {
+                        ParseDialogInformation(results.First().Answer);
+                        InitializeDialog();
+                        turnContext = context;
+
+                        DialogContext dc = await _dialogSet.CreateContextAsync(context, cancellationToken);
+                        await dc.BeginDialogAsync(ReservationDialog, null, cancellationToken);
+                    }
+                    else // No se reconoce ningún comando/acción; el bot muestra la respuesta de la KB
                     {
                         await context.SendActivityAsync(results.First().Answer, cancellationToken: cancellationToken);
                     }
@@ -292,6 +301,63 @@ namespace NLP_With_Dispatch_Bot
                     await context.SendActivityAsync($"Perdón, no te he entendido.");
                 }
             }
+        }
+
+        private void ParseDialogInformation(string answer)
+        {
+            string[] separated_lines = answer.Split("\n");
+
+            // Guardar preguntas (las primeras dos líneas se corresponden con el comando de inicio del diálogo y el número de preguntas que se quiere formular en el mismo
+            for (int i = 2; i < separated_lines.Length - 1; i++)
+            { 
+                string [] question_choices_save = separated_lines[i].Split("##");
+
+                string question = question_choices_save[0];
+                string choices = question_choices_save[1];
+                bool save = question_choices_save.Length > 2;
+
+                string[] separated_choices = choices.Split("@#");
+
+                ConversationFlowQuestion newCfq = new ConversationFlowQuestion();
+
+                newCfq.Question = question;
+                newCfq.Choices = new List<string>(separated_choices);
+                newCfq.SaveAnswer = save;
+
+                testcfd.Questions.Add(newCfq);
+            }
+
+            // La última línea indica si con la información recabada se puede ofrecer una repuesta al usuario en el instante en el que el diálogo concluye o si la información
+            // se encuentra almacenada en la KB y hay que formular una nueva consulta al QnA.
+
+            string botAnswer = separated_lines[separated_lines.Length - 1];
+            testcfd.InfoInQnA = botAnswer.Contains("(QnA)");
+            testcfd.BotAnswer = botAnswer.Substring(botAnswer.IndexOf("="));
+
+        }
+
+        private void InitializeDialog()
+        {
+            // Create the dialog set and add the prompts, including custom validation.
+            //_dialogSet = new DialogSet(_welcomeUserStateAccessors.DialogStateAccessor);
+            //_dialogSet.Add(new NumberPrompt<int>(PartySizePrompt, PartySizeValidatorAsync));
+            //_dialogSet.Add(new ChoicePrompt(LocationPrompt));
+            //_dialogSet.Add(new DateTimePrompt(ReservationDatePrompt, DateValidatorAsync));
+
+            // Define the steps of the waterfall dialog and add it to the set.
+            WaterfallStep[] steps = new WaterfallStep[testcfd.Questions.Count+1];
+
+            for (int i = 0; i <= testcfd.Questions.Count - 1; i++)
+            {
+                steps[i] = PromptForPartySizeAsync;
+            }
+
+            steps[steps.Count() - 1] = AcknowledgeReservationAsync;
+
+            _dialogSet = new DialogSet(_welcomeUserStateAccessors.DialogStateAccessor);
+            _dialogSet.Add(new ChoicePrompt(PartySizePrompt));
+            _dialogSet.Add(new WaterfallDialog(ReservationDialog, steps));
+            done = false;
         }
 
         private async Task<string> DispatchToQnAMakerTextAsync(ITurnContext context, CancellationToken cancellationToken = default(CancellationToken), bool firstTry = false)
@@ -337,7 +403,7 @@ namespace NLP_With_Dispatch_Bot
                         break;
                     default:
                         context.Activity.Text = intent;
-                        await context.SendActivityAsync(await DispatchToQnAMakerTextAsync(context, cancellationToken));
+                        await DispatchToQnAMakerAsync(context, cancellationToken);
                         break;
                 }
             }
@@ -402,37 +468,27 @@ namespace NLP_With_Dispatch_Bot
             WaterfallStepContext stepContext,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            // Prompt for the party size. The result of the prompt is returned to the next step of the waterfall.
 
+            if (phase > 0)
+            {
+                if (testcfd.Questions.ElementAt(phase - 1).SaveAnswer)
+                {
+                    testcfd.Answers.Add(stepContext.Result.ToString());
+                }
+            }
 
+            phase++;
 
+            IList<Choice> choices = ChoiceFactory.ToChoices(testcfd.Questions.ElementAt(phase - 1).Choices);
 
             return await stepContext.PromptAsync(
                  PartySizePrompt,
                  new PromptOptions
                  {
-                     Prompt = MessageFactory.Text("How many people is the reservation for?"),
-                     RetryPrompt = MessageFactory.Text("How large is your party?"),
+                     Prompt = MessageFactory.Text(testcfd.Questions.ElementAt(phase - 1).Question),
+                     Choices = choices.Count() > 0 ? choices : null,
                  },
                  cancellationToken);
-
-        }
-
-        private async Task<DialogTurnResult> PromptForLocationAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            // Record the party size information in the current dialog state.
-            int size = (int)stepContext.Result;
-            stepContext.Values["size"] = size;
-
-            return await stepContext.PromptAsync(
-                "locationPrompt",
-                new PromptOptions
-                {
-                    Prompt = MessageFactory.Text("Please choose a location."),
-                    RetryPrompt = MessageFactory.Text("Sorry, please choose a location from the list."),
-                    Choices = ChoiceFactory.ToChoices(new List<string> { "Redmond", "Bellevue", "Seattle" }),
-                },
-                cancellationToken);
         }
 
         /// <summary>Second step of the main dialog: record the party size and prompt for the
@@ -471,23 +527,38 @@ namespace NLP_With_Dispatch_Bot
             WaterfallStepContext stepContext,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            // Retrieve the reservation date.
-            DateTimeResolution resolution = (stepContext.Result as IList<DateTimeResolution>).First();
-            string time = resolution.Value ?? resolution.Start;
 
-            // Send an acknowledgement to the user.
-            await stepContext.Context.SendActivityAsync(
-                "Thank you. We will confirm your reservation shortly.",
-                cancellationToken: cancellationToken);
-
-            // Return the collected information to the parent context.
-            Reservation reservation = new Reservation
+            // Se guarda la respuesta del usuario a la última pregunta en caso de que fuera requerida
+            if (testcfd.Questions.ElementAt(phase - 1).SaveAnswer)
             {
-                Date = time,
-                Size = (int)stepContext.Values["size"],
-            };
+                testcfd.Answers.Add((stepContext.Result as FoundChoice).Value);
+            }
+
+            // Sustituir etiquetas '$#' en cadena de respuesta por la respuesta asociada a cada una de ellas
+            ReplaceTags();
+
+            if (testcfd.InfoInQnA)
+            {
+                turnContext.Activity.Text = testcfd.BotAnswer;
+                await DispatchToQnAMakerAsync(turnContext, cancellationToken);
+            }
+            else
+            {
+                await stepContext.Context.SendActivityAsync(testcfd.BotAnswer, cancellationToken: cancellationToken);
+            }
+
+            testcfd = new ConversationFlowDialog();
             done = true;
-            return await stepContext.EndDialogAsync(reservation, cancellationToken);
+            phase = 0;
+            return await stepContext.EndDialogAsync(cancellationToken);
+        }
+
+        private void ReplaceTags()
+        {
+            for (int i = 0; i <= testcfd.Answers.Count - 1; i++)
+            {
+                testcfd.BotAnswer = testcfd.BotAnswer.Replace("$" + (i + 1), testcfd.Answers.ElementAt(i));
+            }
         }
 
         /// <summary>Validates whether the party size is appropriate to make a reservation.</summary>
@@ -582,6 +653,11 @@ namespace NLP_With_Dispatch_Bot
 //    await turnContext.SendActivityAsync($"You are seeing this message because this was your first message ever to this bot.", cancellationToken: cancellationToken);
 //    await turnContext.SendActivityAsync($"It is a good practice to welcome the user and provide personal greeting. For example, welcome {userName}.", cancellationToken: cancellationToken);
 //}
+
+
+
+
+
 
 
 ///////// ConversationFlow (validaciones; ¿prompt de opciones no es posible?)
