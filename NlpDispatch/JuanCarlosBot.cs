@@ -48,6 +48,7 @@ namespace NLP_With_Dispatch_Bot
         /// 
 
         // Dispatch keys
+        // Prueba
         private const string CampusDispatchKey = "I_Campus";
         private const string NoneDispatchKey = "None";
         private const string QnaDispatchKey = "QnA";
